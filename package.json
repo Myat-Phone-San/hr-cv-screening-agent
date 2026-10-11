@@ -1,0 +1,16 @@
+{
+  "name": "cv-screening-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HR Candidate Evaluation Website",
+  "author": "Myat Phone San",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node scripts/build-web.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "ISC"
+}

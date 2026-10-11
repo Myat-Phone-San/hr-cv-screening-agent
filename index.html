@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HR CV Screening Dashboard</title>
+    <style>
+        /* GLOBAL */
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f9;
+            overflow: hidden;
+        }
+        .hr-main-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        /* SIDEBAR */
+        #sidebar {
+            width: 260px;
+            background: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            border-right: 1px solid #dee2e6;
+            flex-shrink: 0;
+        }
+        #sidebar.collapsed { width: 0; overflow: hidden; border-right: none; }
+        .sidebar-header { padding: 15px; }
+        .new-chat-btn {
+            background: #ffffff;
+            border: 1px solid #ced4da;
+            color: #221C9E;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .new-chat-btn:hover { background: #e9ecef; }
+        .history-list { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .history-item {
+            padding: 10px; margin-bottom: 5px; border-radius: 8px;
+            cursor: pointer; font-size: 13px; display: flex;
+            justify-content: space-between; align-items: center; color: #495057;
+        }
+        .history-item:hover { background: #e9ecef; }
+        .history-item.active { background: #ffffff; border-left: 4px solid #221C9E; color: #221C9E; font-weight: 600; }
+        .delete-history { color: #adb5bd; font-size: 16px; padding: 0 5px; visibility: hidden; }
+        .history-item:hover .delete-history { visibility: visible; }
+        .delete-history:hover { color: #ff4d4d; }
+
+        /* MAIN CONTENT */
+        .hr-container { 
+            flex: 1; display: flex; flex-direction: column; height: 100%; 
+            position: relative; background: white; overflow: hidden;
+        }
+        .hr-header {
+            background: #221C9E; color: white; padding: 12px 20px;
+            display: flex; align-items: center; z-index: 10; flex-shrink: 0;
+        }
+        .toggle-sidebar-btn {
+            background: transparent; border: none; color: white;
+            font-size: 20px; cursor: pointer; margin-right: 15px;
+        }
+        .hr-header-logo { width: auto; height: 35px; margin-right: 12px; object-fit: contain; }
+        .hr-header h1 { font-size: 16px; margin: 0; }
+
+        /* WEBCHAT WRAPPER */
+        #webchat-wrapper {
+            flex: 1; background: white; position: relative;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        #webchat { height: 100%; width: 100%; }
+
+        /* STATIC WELCOME MESSAGE */
+        #static-welcome { padding: 20px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; }
+        .bot-avatar-static {
+            background: #221C9E; color: white; width: 30px; height: 30px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 10px; font-weight: bold; flex-shrink: 0;
+        }
+        .static-bubble {
+            background: #f0f0f0; padding: 10px 15px; border-radius: 2px 15px 15px 15px;
+            max-width: 80%; color: #333; min-height: 20px;
+        }
+
+        /* ATTACHMENT TRAY */
+        #custom-attachment-preview {
+            position: absolute;
+            bottom: 50px; 
+            left: 0; width: 100%; background: #ffffff;
+            border-top: 1px solid #e2e8f0; padding: 12px 16px;
+            display: none; flex-wrap: wrap; gap: 10px;
+            z-index: 1001; 
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+        }
+        #webchat-wrapper.has-files #custom-attachment-preview { display: flex; }
+        
+        .custom-file-pill {
+            background: #f1f5f9; border: 1px solid #cbd5e1;
+            padding: 8px 12px; border-radius: 6px; font-size: 13px;
+            color: #1e293b; display: flex; align-items: center; gap: 8px;
+        }
+        .remove-file { 
+            background: #cbd5e1; border: none; color: #475569; 
+            cursor: pointer; width: 20px; height: 20px; 
+            border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; font-size: 12px; font-weight: bold;
+        }
+        .remove-file:hover { background: #ef4444; color: white; }
+
+        .file-size {
+            font-size: 11px;
+            color: #666;
+            margin-left: 6px;
+        }
+
+        /* Compression Status */
+        #compression-status {
+            position: absolute;
+            bottom: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #221C9E;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            display: none;
+            z-index: 1002;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            white-space: nowrap;
+        }
+
+        .webchat__bubble, .webchat__bubble--from-user { max-width: 80% !important; }
+
+        .hr-footer {
+            padding: 8px; text-align: center; font-size: 11px;
+            background: #f8f9fa; border-top: 1px solid #ddd;
+            flex-shrink: 0; color: #666;
+        }
+        /* Responsive layout and accessible controls */
+        *, *::before, *::after { box-sizing: border-box; }
+        .hr-main-layout { width: 100%; height: 100vh; height: 100dvh; }
+        .hr-container, #webchat-wrapper, #webchat { min-width: 0; min-height: 0; }
+        #webchat { flex: 1; height: auto; }
+        #sidebar { min-height: 0; }
+        .hr-header { padding-top: max(12px, env(safe-area-inset-top)); }
+        .hr-header h1 { line-height: 1.4; overflow-wrap: anywhere; }
+        .toggle-sidebar-btn { min-width: 44px; min-height: 44px; margin-right: 8px; }
+        button:focus-visible { outline: 3px solid #89baff; outline-offset: 2px; }
+        .history-open { flex: 1; min-width: 0; border: 0; background: transparent; color: inherit; text-align: left; font: inherit; padding: 8px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+        .delete-history { visibility: visible; border: 0; background: transparent; min-width: 36px; min-height: 36px; cursor: pointer; }
+        #static-welcome { flex-shrink: 0; padding: 16px; }
+        .static-bubble { max-width: min(80%, 640px); overflow-wrap: anywhere; }
+        #custom-attachment-preview { max-height: 140px; overflow-y: auto; padding: 10px; }
+        .custom-file-pill { max-width: 100%; min-width: 0; }
+        .file-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .remove-file { flex-shrink: 0; width: 32px; height: 32px; }
+        #compression-status { max-width: calc(100% - 24px); white-space: normal; text-align: center; overflow-wrap: anywhere; }
+        #connection-status { padding: 12px 16px; background: #eef2ff; color: #221C9E; flex-shrink: 0; }
+        #connection-status[hidden], .sidebar-backdrop[hidden] { display: none; }
+        .webchat__bubble, .webchat__bubble--from-user { max-width: 100% !important; overflow-wrap: anywhere; }
+        .hr-footer { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+        #storage-status { display: block; }
+        .sidebar-backdrop { position: fixed; inset: 0; z-index: 19; border: 0; background: rgba(15, 23, 42, .45); }
+        @media (max-width: 760px) {
+            #sidebar, #sidebar.collapsed { position: fixed; top: 0; left: 0; bottom: 0; width: min(280px, 85vw); z-index: 20; transform: translateX(-100%); overflow: hidden; border-right: 1px solid #dee2e6; padding-top: env(safe-area-inset-top); }
+            #sidebar.mobile-open { transform: translateX(0); box-shadow: 8px 0 30px rgba(0, 0, 0, .15); }
+            .hr-header { padding-left: 8px; padding-right: 12px; }
+            .hr-header-logo { height: 28px; max-width: 80px; margin-right: 8px; }
+            .hr-header h1 { font-size: 13px; }
+            .hr-footer { font-size: 10px; }
+            #static-welcome { padding: 12px; }
+            .static-bubble { max-width: calc(100% - 40px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #sidebar { transition: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="hr-main-layout">
+    <button id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()" aria-label="Close chat history" hidden></button>
+    <aside id="sidebar" aria-label="Chat history">
+        <div class="sidebar-header">
+            <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+        </div>
+        <div class="history-list" id="history-list"></div>
+    </aside>
+    <div class="hr-container">
+        <header class="hr-header">
+            <button id="sidebar-toggle" class="toggle-sidebar-btn" onclick="toggleSidebar()" aria-label="Toggle chat history" aria-controls="sidebar" aria-expanded="true">&#9776;</button>
+            <img alt="CB Logo" class="hr-header-logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAnAG4DASIAAhEBAxEB/8QAGgABAAMBAQEAAAAAAAAAAAAAAAMEBgUHAf/EACsQAAEEAgECAwgDAAAAAAAAAAEAAgMEBRExEkETISIGFDIzcYGRoRVRYv/EABkBAQADAQEAAAAAAAAAAAAAAAABAgMEBf/EAB8RAQEAAgEEAwAAAAAAAAAAAAABAhEEAyExQRJSgf/aAAwDAQACEQMRAD8AzyIi9hQREQEAJOgNlW8fj58hMI4W+Xd3YLW0sRToADw/Hn77GwFln1Zh29p0yMONtz/LgeftpWP4DJa37sfyFt9yAac9kY7AJ1efzj+FheRl6idMBNjrcHzIHj7bVUgg6I0V6Tt5Gg5ko7grm3cNTvggM8CftoaBVseR9ojTEIrWQx8+PnMczfo7sVVXVLLNxAiIgIiICmqVn27LIYxtzioVax96TH2BNEAT3BUXeuw3FSoyjA2rXADtet6lbwREelg+KQqrj8hDkYR4Lg2Rx28HkKzI+NsbpJT0wRftebd77+VhgBO4oy/+3OUvTLviP6LH5P2isWXllYmGIeQ1yVyve7G9+M/f1W04+Vm6begSAA7ljMf+m8L67gNl9TT8Mg7LKYv2inrPDLRMsJ53yFqo3MLGvjPXBL+lnnhcPIiuU2X4HVbA9YG2PWEtV31bD4ZBpzSttkMjDjodTO6pWn0AclYzIXZL9l00oAJ7Bb8f5fiKrIiLqQIiICIiCSCeSvKJIXlrh3C6uQzzr2OZXLel+/URwURVuMt3RxkRFYF2cfnnUsc+uGlz9+gnhoRFXLGZTVHKnnksSmSZ5e88kqNEVgREQf/Z" />
+            <h1>HR Screening Assistant | Candidate Evaluation Portal</h1>
+        </header>
+        <div id="webchat-wrapper">
+            <div id="static-welcome">
+                <div class="bot-avatar-static">HR</div>
+                <div class="static-bubble" id="welcome-text"></div>
+            </div>
+            <div id="connection-status" role="status" aria-live="polite"></div>
+            <div id="webchat" role="main" aria-label="CV screening chat"></div>
+            <div id="custom-attachment-preview"></div>
+            <div id="compression-status" role="status" aria-live="polite"></div>
+        </div>
+        <footer class="hr-footer">
+            AI-generated content. Please verify all CV data before final selection.
+            <span id="storage-status" role="status"></span>
+        </footer>
+    </div>
+</div>
+
+<script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+<script>
+async function getChatToken() {
+    const response = await fetch('/api/token', { method: 'POST' });
+    const data = await response.json();
+    if (!response.ok || typeof data.token !== 'string' || !data.token) {
+        throw new Error(data.error || 'Unable to connect to chat. Please try again.');
+    }
+    return data.token;
+}
+
+let currentAttachments = [];
+const urlParams = new URLSearchParams(window.location.search);
+let currentConversationId = urlParams.get('chatId') || crypto.randomUUID();
+// Keep the current chat selected across browser refreshes.
+if (!urlParams.get('chatId')) {
+    const currentURL = new URL(window.location.href);
+    currentURL.searchParams.set('chatId', currentConversationId);
+    window.history.replaceState(null, '', currentURL);
+}
+let chatHistory = [];
+try {
+    const saved = JSON.parse(localStorage.getItem('hr_chat_history') || '[]');
+    if (Array.isArray(saved)) chatHistory = saved.filter(chat => chat && typeof chat.id === 'string' && typeof chat.title === 'string' && Array.isArray(chat.messages));
+} catch { /* Start with empty history if browser storage is unavailable. */ }
+function persistHistory() {
+    try { localStorage.setItem('hr_chat_history', JSON.stringify(chatHistory)); }
+    catch { document.getElementById('storage-status').textContent = 'Chat history could not be saved on this device.'; }
+}
+let store;
+
+
+
+/* --- UI HELPERS --- */
+const mobileLayout = window.matchMedia('(max-width: 760px)');
+function syncSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const open = mobileLayout.matches ? sidebar.classList.contains('mobile-open') : !sidebar.classList.contains('collapsed');
+    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', String(open));
+    sidebar.inert = !open;
+    document.getElementById('sidebar-backdrop').hidden = !(mobileLayout.matches && open);
+}
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle(mobileLayout.matches ? 'mobile-open' : 'collapsed');
+    syncSidebar();
+}
+mobileLayout.addEventListener('change', () => {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    syncSidebar();
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && mobileLayout.matches && document.getElementById('sidebar').classList.contains('mobile-open')) {
+        toggleSidebar();
+        document.getElementById('sidebar-toggle').focus();
+    }
+});
+
+function renderHistory() {
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    chatHistory.forEach(chat => {
+        const item = document.createElement('div');
+        item.className = `history-item ${chat.id === currentConversationId ? 'active' : ''}`;
+        const open = document.createElement('button');
+        open.className = 'history-open';
+        open.textContent = chat.title;
+        open.title = chat.title;
+        open.onclick = () => loadConversation(chat.id);
+        const remove = document.createElement('button');
+        remove.className = 'delete-history';
+        remove.type = 'button';
+        remove.title = 'Delete chat';
+        remove.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg>';
+        remove.setAttribute('aria-label', 'Delete ' + chat.title);
+        remove.onclick = event => deleteConversation(event, chat.id);
+        item.append(open, remove);
+        list.appendChild(item);
+    });
+}
+
+function saveCurrentChat(text, fromUser) {
+    if (!text) return;
+    const staticMsg = document.getElementById('static-welcome');
+    if (staticMsg) staticMsg.style.display = 'none';
+    let chat = chatHistory.find(c => c.id === currentConversationId);
+    if (!chat) {
+        chat = { id: currentConversationId, title: text.substring(0, 25) + '...', messages: [] };
+        chatHistory.unshift(chat);
+    }
+    chat.messages.push({ text, fromUser, timestamp: new Date() });
+    persistHistory();
+    renderHistory();
+}
+
+function loadConversation(id) { window.location.search = `?chatId=${encodeURIComponent(id)}`; }
+function deleteConversation(event, id) {
+    event.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this chat?')) return;
+    chatHistory = chatHistory.filter(c => c.id !== id);
+    persistHistory();
+    if (currentConversationId === id) window.location.search = ''; 
+    else renderHistory();
+}
+function startNewChat() { window.location.href = window.location.pathname; }
+
+/* --- FORMAT FILE SIZE --- */
+function formatSize(bytes) {
+    if (!bytes) return '0 KB';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+/* --- PDF COMPRESSION (High Quality Mode) --- */
+async function compressPDF(originalFile) {
+    const status = document.getElementById('compression-status');
+    status.style.display = 'block';
+    status.textContent = 'Optimizing ' + originalFile.name + '...';
+    try {
+        // Preserve searchable text and links instead of rasterizing CV pages.
+        const document = await PDFLib.PDFDocument.load(await originalFile.arrayBuffer());
+        const bytes = await document.save({ useObjectStreams: true });
+        if (bytes.length >= originalFile.size) {
+            status.textContent = 'Original PDF retained: no smaller version available.';
+            return originalFile;
+        }
+        status.textContent = 'PDF optimized: ' + formatSize(originalFile.size) + ' -> ' + formatSize(bytes.length);
+        return new File([bytes], originalFile.name, { type: 'application/pdf', lastModified: originalFile.lastModified });
+    } catch {
+        status.textContent = 'Could not optimize PDF. Sending the original file.';
+        return originalFile;
+    }
+}
+
+/* --- ATTACHMENT PREVIEW --- */
+function getFileName(att) {
+    if (att.name) return att.name;
+    if (att.file && att.file.name) return att.file.name;
+    if (att.blob && att.blob.name) return att.blob.name;
+    return 'Document';
+}
+
+function renderAttachmentPreview() {
+    const wrapper = document.getElementById('webchat-wrapper');
+    const container = document.getElementById('custom-attachment-preview');
+    container.innerHTML = '';
+
+    if (currentAttachments.length > 0) {
+        wrapper.classList.add('has-files');
+        currentAttachments.forEach((att, idx) => {
+            const file = att.file || att.blob || att;
+            const fileName = getFileName(att);
+            const sizeText = formatSize(file ? file.size : 0);
+
+            const pill = document.createElement('div');
+            pill.className = 'custom-file-pill';
+            const label = document.createElement('span');
+            label.className = 'file-label';
+            label.textContent = fileName + ' (' + sizeText + ')';
+            label.title = fileName;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'remove-file';
+            remove.id = 'remove-' + idx;
+            remove.textContent = '\u00D7';
+            remove.setAttribute('aria-label', 'Remove ' + fileName);
+            pill.append(label, remove);
+            container.appendChild(pill);
+
+            pill.querySelector(`#remove-${idx}`).addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                currentAttachments = currentAttachments.filter(f => f !== att);
+                store.dispatch({
+                    type: 'WEB_CHAT/SET_SEND_BOX_ATTACHMENTS',
+                    payload: { attachments: [...currentAttachments] }
+                });
+                renderAttachmentPreview();
+            });
+        });
+    } else {
+        wrapper.classList.remove('has-files');
+    }
+}
+
+/* --- TYPEWRITER --- */
+function runTypewriter(id, text, speed = 30) {
+    let i = 0;
+    const elem = document.getElementById(id);
+    if (!elem) return;
+    elem.textContent = "";
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { elem.textContent = text; return; }
+    function type() {
+        if (i < text.length) {
+            elem.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+/* --- WEBCHAT CORE --- */
+async function initWebChat(initialMessages = []) {
+    const status = document.getElementById('connection-status');
+    status.hidden = false;
+    status.textContent = 'Connecting to chat...';
+    const token = await getChatToken();
+    const chatDiv = document.getElementById('webchat');
+    
+    if (initialMessages.length > 0) {
+        document.getElementById('static-welcome').style.display = 'none';
+    } else {
+        setTimeout(() => runTypewriter("welcome-text", "Hello, I'm CV Screening Agent. How can I help?"), 500);
+    }
+
+    store = window.WebChat.createStore({}, ({ dispatch }) => next => action => {
+        
+        if (action.type === 'WEB_CHAT/SET_SEND_BOX_ATTACHMENTS') {
+            const newFiles = action.payload.attachments || [];
+            currentAttachments = [...newFiles];
+            renderAttachmentPreview();
+            return next(action);
+        }
+
+        if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
+            status.hidden = true;
+            initialMessages.forEach(msg => {
+                dispatch({
+                    type: 'DIRECT_LINE/INCOMING_ACTIVITY',
+                    payload: {
+                        activity: {
+                            type: 'message',
+                            text: msg.text,
+                            id: 'history-' + currentConversationId + '-' + initialMessages.indexOf(msg),
+                            from: { id: msg.fromUser ? 'local-user' : 'bot', role: msg.fromUser ? 'user' : 'bot' },
+                            timestamp: msg.timestamp,
+                            channelData: { isHistory: true }
+                        }
+                    }
+                });
+            });
+
+        }
+
+        // Intercept Send Message - Compress PDF + Update UI with reduced size
+        if (action.type === 'WEB_CHAT/SEND_MESSAGE') {
+            if (action.payload._isProcessed) return next(action);
+
+            const text = action.payload.text || '';
+            saveCurrentChat(text || currentAttachments.map(getFileName).join(', '), true);
+
+            (async () => {
+                let attachmentsToSend = [...(action.payload.attachments || currentAttachments)];
+                const statusEl = document.getElementById('compression-status');
+
+                for (let i = 0; i < attachmentsToSend.length; i++) {
+                    let att = attachmentsToSend[i];
+                    let file = att.file || att.blob || att;
+
+                    if (file && file.type === 'application/pdf' && file.size > 1024 * 1024) { // > 1MB
+                        const compressedFile = await compressPDF(file);
+                        attachmentsToSend[i] = { ...att, file: compressedFile, blob: compressedFile };
+
+                        // Update preview with new reduced size
+                        currentAttachments = attachmentsToSend;
+                        renderAttachmentPreview();
+                    }
+                }
+
+                // Clear attachments after processing
+                currentAttachments = [];
+                renderAttachmentPreview();
+
+                // Send the (possibly compressed) attachments to the bot
+                store.dispatch({
+                    type: 'WEB_CHAT/SEND_MESSAGE',
+                    payload: { 
+                        ...action.payload,
+                        text,
+                        attachments: attachmentsToSend, 
+                        _isProcessed: true 
+                    }
+                });
+
+                // Hide status after a delay
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 2500);
+            })();
+
+            return next({ type: 'WEB_CHAT/NO_OP' });
+        }
+
+        if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY' && action.payload.activity.from?.role === 'bot') {
+            if (action.payload.activity.text && !action.payload.activity.channelData?.isHistory) {
+                saveCurrentChat(action.payload.activity.text, false);
+            }
+        }
+        return next(action);
+    });
+
+    window.WebChat.renderWebChat({
+        directLine: window.WebChat.createDirectLine({ token }),
+        store,
+        styleOptions: {
+            accent: '#221C9E',
+            botAvatarInitials: 'HR',
+            userAvatarInitials: 'RC',
+            showTypingIndicator: true,
+            backgroundColor: 'transparent',
+            bubbleMaxWidth: 640,
+            primaryFont: '"Segoe UI", sans-serif',
+            sendBoxTextWrap: true
+        }
+    }, chatDiv);
+}
+
+renderHistory();
+const savedChat = chatHistory.find(c => c.id === currentConversationId);
+syncSidebar();
+initWebChat(savedChat ? savedChat.messages : []).catch(error => {
+    const status = document.getElementById('connection-status');
+    status.hidden = false;
+    status.textContent = error.message + ' Reload the page to retry.';
+});
+
+</script>
+</body>
+</html>
