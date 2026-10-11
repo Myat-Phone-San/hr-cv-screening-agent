@@ -161,11 +161,24 @@
         .delete-history { visibility: visible; border: 0; background: transparent; min-width: 36px; min-height: 36px; cursor: pointer; }
         #static-welcome { flex-shrink: 0; padding: 16px; }
         .static-bubble { max-width: min(80%, 640px); overflow-wrap: anywhere; }
-        #custom-attachment-preview { max-height: 140px; overflow-y: auto; padding: 10px; }
+        #custom-attachment-preview {
+            position: static; flex-shrink: 0; width: 100%;
+            max-height: 96px; overflow-y: auto; padding: 10px 16px;
+            background: #f8faff; border-top: 0; border-bottom: 1px solid #e2e8f0;
+            box-shadow: none; z-index: auto;
+        }
         .custom-file-pill { max-width: 100%; min-width: 0; }
         .file-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .remove-file { flex-shrink: 0; width: 32px; height: 32px; }
-        #compression-status { max-width: calc(100% - 24px); white-space: normal; text-align: center; overflow-wrap: anywhere; }
+        #compression-status {
+            position: static; transform: none; flex-shrink: 0;
+            max-width: 100%; white-space: normal; text-align: center;
+            overflow-wrap: anywhere; border-radius: 0; box-shadow: none;
+            padding: 8px 16px; z-index: auto;
+        }
+        #webchat .webchat__send-box { flex-shrink: 0; }
+        #webchat .webchat__send-box-text-box { min-width: 0; }
+        .custom-file-pill { background: white; border-radius: 10px; }
         #connection-status { padding: 12px 16px; background: #eef2ff; color: #221C9E; flex-shrink: 0; }
         #connection-status[hidden], .sidebar-backdrop[hidden] { display: none; }
         .webchat__bubble, .webchat__bubble--from-user { max-width: 100% !important; overflow-wrap: anywhere; }
@@ -185,6 +198,25 @@
         @media (prefers-reduced-motion: reduce) {
             #sidebar { transition: none; }
         }
+        .composer { flex-shrink: 0; margin: 10px 20px 14px; padding: 12px; border: 1px solid #dce1eb; border-radius: 22px; background: #f8f9fc; box-shadow: 0 3px 14px rgba(30, 35, 70, .06); }
+        .composer:focus-within { border-color: #9692da; }
+        #message-input { display: block; width: 100%; resize: none; min-height: 40px; max-height: 120px; overflow-y: auto; padding: 10px 6px; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; line-height: 1.5; color: #202333; }
+        .composer-toolbar { display: flex; align-items: center; gap: 12px; }
+        .composer-toolbar button { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; cursor: pointer; }
+        .composer-upload { border: 1px solid #dce1eb; background: white; color: #45415b; font-size: 28px; }
+        .composer-send { margin-left: auto; background: #221C9E; color: white; border: 0; }
+        .composer-send:disabled { background: #d9dce5; color: #8a8f9e; cursor: default; }
+        .composer-hint { font-size: 11px; color: #777d8b; }
+        #composer #custom-attachment-preview { display: none; width: 100%; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overflow-y: hidden; max-height: none; padding: 0 0 10px; border: 0; background: transparent; }
+        #webchat-wrapper.has-files #composer #custom-attachment-preview { display: flex; }
+        #composer .custom-file-pill { position: relative; flex: 0 0 220px; width: 220px; padding: 12px 30px 12px 12px; gap: 10px; border: 1px solid #dce1eb; border-radius: 12px; background: white; }
+        .file-icon { display: flex; align-items: center; justify-content: center; width: 34px; height: 40px; flex-shrink: 0; border-radius: 8px; background: #eeedff; color: #221C9E; font-size: 10px; font-weight: 700; }
+        .file-details { min-width: 0; }
+        .file-label { display: block; font-size: 12px; font-weight: 600; }
+        .file-meta { display: block; margin-top: 4px; font-size: 11px; color: #777d8b; }
+        #composer .remove-file { position: absolute; right: 4px; top: 4px; width: 24px; height: 24px; background: #f1f2f6; font-size: 16px; }
+        #composer #compression-status { font-size: 12px; padding: 6px; margin-bottom: 6px; border-radius: 8px; }
+        @media (max-width: 760px) { .composer { margin: 8px; border-radius: 18px; } .composer-hint { display: none; } #composer .custom-file-pill { flex-basis: 190px; width: 190px; } }
     </style>
 </head>
 <body>
@@ -209,8 +241,17 @@
             </div>
             <div id="connection-status" role="status" aria-live="polite"></div>
             <div id="webchat" role="main" aria-label="CV screening chat"></div>
-            <div id="custom-attachment-preview"></div>
-            <div id="compression-status" role="status" aria-live="polite"></div>
+            <form id="composer" class="composer" aria-label="Message composer">
+                <div id="custom-attachment-preview" aria-label="Selected attachments"></div>
+                <div id="compression-status" role="status" aria-live="polite"></div>
+                <textarea id="message-input" rows="1" placeholder="Ask about your CVs?" aria-label="Message"></textarea>
+                <div class="composer-toolbar">
+                    <input id="file-input" type="file" multiple hidden>
+                    <button id="upload-button" type="button" class="composer-upload" aria-label="Upload files" title="Upload files">+</button>
+                    <span class="composer-hint">Enter to send ? Shift+Enter for a new line</span>
+                    <button id="send-button" type="submit" class="composer-send" aria-label="Send message" title="Send message" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5m-7 7 7-7 7 7"/></svg></button>
+                </div>
+            </form>
         </div>
         <footer class="hr-footer">
             AI-generated content. Please verify all CV data before final selection.
@@ -251,6 +292,65 @@ function persistHistory() {
     catch { document.getElementById('storage-status').textContent = 'Chat history could not be saved on this device.'; }
 }
 let store;
+let chatReady = false;
+let isSending = false;
+function updateSendButton() {
+    document.getElementById('send-button').disabled = !chatReady || isSending || !(document.getElementById('message-input').value.trim() || currentAttachments.length);
+}
+const composer = document.getElementById('composer');
+const input = document.getElementById('message-input');
+const fileInput = document.getElementById('file-input');
+document.getElementById('upload-button').onclick = () => fileInput.click();
+fileInput.onchange = () => {
+    currentAttachments.push(...Array.from(fileInput.files, blob => ({ blob })));
+    fileInput.value = '';
+    renderAttachmentPreview();
+};
+input.oninput = () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    updateSendButton();
+};
+input.onkeydown = event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        if (!document.getElementById('send-button').disabled) composer.requestSubmit();
+    }
+};
+composer.onsubmit = async event => {
+    event.preventDefault();
+    if (document.getElementById('send-button').disabled) return;
+    isSending = true;
+    const text = input.value.trim();
+    const selected = [...currentAttachments];
+    updateSendButton();
+    document.getElementById('upload-button').disabled = true;
+    input.disabled = true;
+    try {
+        const attachments = [];
+        for (const attachment of selected) {
+            let blob = attachment.blob;
+            if (blob.type === 'application/pdf' && blob.size > 1024 * 1024) blob = await compressPDF(blob);
+            attachments.push({ blob });
+        }
+        store.dispatch({ type: 'WEB_CHAT/SEND_MESSAGE', payload: { text, attachments, method: 'keyboard', _isProcessed: true } });
+        saveCurrentChat(text || selected.map(getFileName).join(', '), true);
+        currentAttachments = [];
+        input.value = '';
+        input.style.height = 'auto';
+        renderAttachmentPreview();
+    } catch {
+        document.getElementById('connection-status').hidden = false;
+        document.getElementById('connection-status').textContent = 'Unable to send. Your message and files have been kept; please retry.';
+    } finally {
+        isSending = false;
+        input.disabled = false;
+        document.getElementById('upload-button').disabled = false;
+        document.getElementById('compression-status').style.display = 'none';
+        updateSendButton();
+        input.focus();
+    }
+};
 
 
 
@@ -366,6 +466,7 @@ function renderAttachmentPreview() {
     const wrapper = document.getElementById('webchat-wrapper');
     const container = document.getElementById('custom-attachment-preview');
     container.innerHTML = '';
+    updateSendButton();
 
     if (currentAttachments.length > 0) {
         wrapper.classList.add('has-files');
@@ -378,7 +479,7 @@ function renderAttachmentPreview() {
             pill.className = 'custom-file-pill';
             const label = document.createElement('span');
             label.className = 'file-label';
-            label.textContent = fileName + ' (' + sizeText + ')';
+            label.textContent = fileName;
             label.title = fileName;
             const remove = document.createElement('button');
             remove.type = 'button';
@@ -386,7 +487,16 @@ function renderAttachmentPreview() {
             remove.id = 'remove-' + idx;
             remove.textContent = '\u00D7';
             remove.setAttribute('aria-label', 'Remove ' + fileName);
-            pill.append(label, remove);
+            const icon = document.createElement('span');
+            icon.className = 'file-icon';
+            icon.textContent = fileName.split('.').pop().slice(0, 5).toUpperCase();
+            const details = document.createElement('span');
+            details.className = 'file-details';
+            const meta = document.createElement('span');
+            meta.className = 'file-meta';
+            meta.textContent = sizeText;
+            details.append(label, meta);
+            pill.append(icon, details, remove);
             container.appendChild(pill);
 
             pill.querySelector(`#remove-${idx}`).addEventListener('click', (e) => {
@@ -447,6 +557,8 @@ async function initWebChat(initialMessages = []) {
 
         if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
             status.hidden = true;
+            chatReady = true;
+            updateSendButton();
             initialMessages.forEach(msg => {
                 dispatch({
                     type: 'DIRECT_LINE/INCOMING_ACTIVITY',
@@ -465,55 +577,6 @@ async function initWebChat(initialMessages = []) {
 
         }
 
-        // Intercept Send Message - Compress PDF + Update UI with reduced size
-        if (action.type === 'WEB_CHAT/SEND_MESSAGE') {
-            if (action.payload._isProcessed) return next(action);
-
-            const text = action.payload.text || '';
-            saveCurrentChat(text || currentAttachments.map(getFileName).join(', '), true);
-
-            (async () => {
-                let attachmentsToSend = [...(action.payload.attachments || currentAttachments)];
-                const statusEl = document.getElementById('compression-status');
-
-                for (let i = 0; i < attachmentsToSend.length; i++) {
-                    let att = attachmentsToSend[i];
-                    let file = att.file || att.blob || att;
-
-                    if (file && file.type === 'application/pdf' && file.size > 1024 * 1024) { // > 1MB
-                        const compressedFile = await compressPDF(file);
-                        attachmentsToSend[i] = { ...att, file: compressedFile, blob: compressedFile };
-
-                        // Update preview with new reduced size
-                        currentAttachments = attachmentsToSend;
-                        renderAttachmentPreview();
-                    }
-                }
-
-                // Clear attachments after processing
-                currentAttachments = [];
-                renderAttachmentPreview();
-
-                // Send the (possibly compressed) attachments to the bot
-                store.dispatch({
-                    type: 'WEB_CHAT/SEND_MESSAGE',
-                    payload: { 
-                        ...action.payload,
-                        text,
-                        attachments: attachmentsToSend, 
-                        _isProcessed: true 
-                    }
-                });
-
-                // Hide status after a delay
-                setTimeout(() => {
-                    statusEl.style.display = 'none';
-                }, 2500);
-            })();
-
-            return next({ type: 'WEB_CHAT/NO_OP' });
-        }
-
         if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY' && action.payload.activity.from?.role === 'bot') {
             if (action.payload.activity.text && !action.payload.activity.channelData?.isHistory) {
                 saveCurrentChat(action.payload.activity.text, false);
@@ -526,6 +589,7 @@ async function initWebChat(initialMessages = []) {
         directLine: window.WebChat.createDirectLine({ token }),
         store,
         styleOptions: {
+            hideSendBox: true,
             accent: '#221C9E',
             botAvatarInitials: 'HR',
             userAvatarInitials: 'RC',
@@ -533,7 +597,16 @@ async function initWebChat(initialMessages = []) {
             backgroundColor: 'transparent',
             bubbleMaxWidth: 640,
             primaryFont: '"Segoe UI", sans-serif',
-            sendBoxTextWrap: true
+            sendBoxTextWrap: true,
+            sendBoxHeight: 52,
+            sendBoxMaxHeight: 120,
+            sendBoxButtonAlignment: 'bottom',
+            sendBoxButtonColor: '#221C9E',
+            sendBoxButtonColorOnHover: '#171270',
+            sendBoxButtonShadeColorOnHover: '#eef2ff',
+            sendBoxButtonShadeBorderRadius: 8,
+            sendBoxAttachmentBarMaxHeight: 80,
+            sendBoxBorderTop: '1px solid #e2e8f0'
         }
     }, chatDiv);
 }
