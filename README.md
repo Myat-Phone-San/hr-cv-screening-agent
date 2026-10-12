@@ -5,16 +5,15 @@ No npm dependencies are needed.
 
 ## Run locally
 
-1. Copy .env.example to .env if you do not already have .env.
-2. Set BOT_SECRET to your Direct Line secret in .env.
-3. Run npm start and open http://localhost:3000 in your browser.
+1. Set BOT_SECRET to Direct Line secret in .env.
+2. Run npm start and open http://localhost:3000 in  browser.
 
 The local server reads .env and serves /api/token and the HTML page. Open the
 localhost URL instead of double-clicking index.html.
 
 ## Deploy to Vercel
 
-Upload these files to GitHub, preserving the folder structure:
+Uploaded these files to GitHub, preserving the folder structure:
 
 - index.html
 - api/token.js
@@ -27,18 +26,6 @@ Upload these files to GitHub, preserving the folder structure:
 - .env.example
 - README.md
 
-Do not upload .env, node_modules, dist, or the generated public folder.
-
-Import the repository into Vercel. The included vercel.json configures the
-build to copy only index.html into public. api/token.js runs as a server
-function; server.js is for local development only.
-
-In Vercel project Settings > Environment Variables, set BOT_SECRET for
-Production (and Preview if needed), then deploy or redeploy. The secret stays
-on the server; the browser receives a conversation token.
-
-The token endpoint allows visitors to start a chat. User login and rate limiting
-are not implemented.
 
 ## Dashboard behavior
 
